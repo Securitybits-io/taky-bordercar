@@ -20,6 +20,8 @@ TAKY_MON_PORT   = os.getenv("MON_PORT", default=1337)
 LOG_LEVEL       = os.getenv("LOG_LEVEL", default="INFO").upper()
 
 def main():
+    print(api.fetch_streams("ace-training.airsoftsweden.com", STREAM_API_PORT))
+    
     return
 
 
