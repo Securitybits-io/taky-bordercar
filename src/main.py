@@ -3,6 +3,7 @@ import socket
 import os
 import requests
 import json
+import certutil
 
 import cot
 
@@ -14,9 +15,12 @@ from queue import Queue
 STREAM_URL      = os.getenv("STREAM_URL", default="127.0.0.1")
 STREAM_API_PORT = os.getenv("STREAM_API_PORT", default=9997)
 
+CERT_PASS       = os.getenv('CERT_PASS')
+LOG_LEVEL       = os.getenv("LOG_LEVEL", default="INFO").upper()
+TAKY_IP         = os.getenv('IP')
+
 TAKY_MON_IP     = os.getenv("TAKY_MON_IP", default="127.0.0.1")
 TAKY_MON_PORT   = os.getenv("MON_PORT", default=1337)
-LOG_LEVEL       = os.getenv("LOG_LEVEL", default="INFO").upper()
 
 
 def taky_connect(HOST, PORT):
@@ -33,6 +37,12 @@ def taky_connect(HOST, PORT):
     return s
 
 
+def init_certs(cert_password):
+    logging.info("Creating TAKY-BORDERCAR Certs")
+    certutil.build_certs(cert_password)
+    return
+
+
 def send_stream(taky, streams):
     logging.info(f"[+] Consumer Thread started, waiting on Active Streams...")
     while(True):
@@ -42,7 +52,7 @@ def send_stream(taky, streams):
             stream = streams.get()
             message = cot.composeCoT(STREAM_URL, stream['callsign'])
             try:
-                taky.send(message)
+                cot.sendCoT(message)
             except:
                 logging.error(message)
             
@@ -80,7 +90,7 @@ def main():
     
     streams = Queue()
 
-    taky = taky_connect(TAKY_MON_IP, TAKY_MON_PORT)
+    taky = taky_connect(TAKY_IP, TAKY_MON_PORT)
 
     if (taky._closed == False): #Start the consumer of the queue
        consumer = Thread(target=send_stream, args=(taky, streams))

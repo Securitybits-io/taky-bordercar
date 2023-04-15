@@ -1,40 +1,32 @@
 import logging
 import datetime
+import socket
+import ssl
+import os
 import xml.etree.ElementTree as ET
 
-'''
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<event version="2.0" uid="Unique-uid-{{ callsign }}" type="b-m-p-s-p-loc" how="h-g-i-g-o" time="{{ global.starttime }}" start="{{ global.starttime }}" stale="{{ global.staletime }}">
-  <point lat="{{ payload.lat }}" lon="{{ payload.lon }}" hae="{{ payload.hae }}" ce="{{ payload.ce }}" le="{{ payload.le }}" />
-  <detail>
-    <contact callsign="{{ callsign }}-stream" />
-    <link type="a-f-G-U-C-I" uid="ASN-TAK-BOT-FAKE-UID" parent_callsign="ASN-TAK-BOT" relation="p-p" production_time="{{ global.starttime }}" />
-    <sensor fov="45" fovBlue="1" displayMagneticReference="0" range="100" fovGreen="1" fovAlpha="0" hideFov="true" fovRed="1" azimuth="270" />
-    <remarks />
-    <__video uid="Video-UID-{{ callsign }}">
-      <ConnectionEntry protocol="rtsp" path="/{{ callsign }}" address="{{global.ip}}" port="8554" uid="Video-UID-{{ callsign }}" alias="{{ callsign }}" roverPort="-1" rtspReliable="0" ignoreEmbeddedKLV="False" networkTimeout="0" bufferTime="-1" />
-    </__video>
-  </detail>
-</event>
-
-
-<event version="2.0" uid="dbc84ae2-937c-4d6f-b6d5-d5278d38b734" type="b-i-v" how="m-g" time="2023-04-15T14:33:56.271Z" start="2023-04-15T14:33:56.271Z" stale="2023-04-15T15:33:56.271Z">
-  <point lat="0.000000" lon="0.000000" hae="9999999.0" ce="9999999.0" le="9999999.0"/>
-  <detail>
-    <contact callsign="Dronefeed ODA-A10"/>
-    <link production_time="2023-04-15T14:33:56.271Z" relationship="p-p" uid="dbc84ae2-937c-4d6f-b6d5-d5278d38b734" parent_callsign="ODA-A10-BS"/>
-    <__video>
-      <ConnectionEntry protocol="rtsp" alias="Dronefeed ODA-A10" address="ace-training.airsoftsweden.com" roverPort="-1" rtspReliable="0" ignoreEmbeddedKLV="false" path="/ODA-A10" uid="dbc84ae2-937c-4d6f-b6d5-d5278d38b734" port="1935" bufferTime="-1" networkTimeout="12000"/>
-    </__video>
-  </detail>
-</event>
-
-'''
+from certutil import BOT_CERT_PATH, CERT_PATH
 
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 STALE_DURATION = 5 #StaleOut 5MIN
 SENDER_UID = 'taky-bordercar'
 SENDER_CALLSIGN = 'Headquarters'
+
+IP = str(os.getenv('IP'))
+PORT = 8089
+
+SCRT = CERT_PATH + "/server.crt"
+CCRT = BOT_CERT_PATH + "/taky-bordercar.crt"
+CKEY = BOT_CERT_PATH + "/taky-bordercar.key"
+
+
+def sendCoT(message):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock_ssl = ssl.wrap_socket(sock, ca_certs=SCRT, cert_reqs=ssl.CERT_NONE, certfile=CCRT, keyfile=CKEY)
+
+    conn = sock_ssl.connect((IP, PORT))
+    sock_ssl.send(message)
+
 
 def composeCoT(address, callsign):
     logging.basicConfig(format='%(levelname)s:%(threadName)s:%(message)s', level=logging.DEBUG)
