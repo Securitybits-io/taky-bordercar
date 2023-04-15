@@ -89,7 +89,7 @@ def main():
     #logging.info(api.fetch_streams(STREAM_URL, STREAM_API_PORT))
     
     streams = Queue()
-
+    init_certs(CERT_PASS)
     taky = taky_connect(TAKY_IP, TAKY_MON_PORT)
 
     if (taky._closed == False): #Start the consumer of the queue
