@@ -19,23 +19,6 @@ CERT_PASS       = os.getenv('CERT_PASS')
 LOG_LEVEL       = os.getenv("LOG_LEVEL", default="INFO").upper()
 TAKY_IP         = os.getenv('IP')
 
-TAKY_MON_IP     = os.getenv("TAKY_MON_IP", default="127.0.0.1")
-TAKY_MON_PORT   = os.getenv("MON_PORT", default=1337)
-
-
-def taky_connect(HOST, PORT):
-    while True:
-        try:#moved this line here
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((HOST, PORT))
-            break
-        except socket.error:
-            logging.error("[+] TAKY Connection Failed, Retrying..")
-            sleep(1)
-    logging.info('[+] Connected to TAKY Monitor Port')
-    
-    return s
-
 
 def init_certs(cert_password):
     logging.info("Creating TAKY-BORDERCAR Certs")
@@ -43,7 +26,7 @@ def init_certs(cert_password):
     return
 
 
-def send_stream(streams):
+def send_stream(certpass, streams):
     logging.info(f"[+] Consumer Thread started, waiting on Active Streams...")
     while(True):
         if streams.empty():
@@ -90,14 +73,10 @@ def main():
     
     streams = Queue()
     init_certs(CERT_PASS)
-    #taky = taky_connect(TAKY_IP, TAKY_MON_PORT)
 
-    # if (taky._closed == False): #Start the consumer of the queue
-    #    consumer = Thread(target=send_stream, args=(taky, streams))
-    #    consumer.start()
-    
-    consumer = Thread(target=send_stream, args=(streams))
+    consumer = Thread(target=send_stream, args=(CERT_PASS, streams))
     consumer.start()
+
     logging.info(f"Connected to Taky Monitor Port")
     producer = Thread(target=fetch_streams, args=(STREAM_URL, STREAM_API_PORT, streams))
     producer.start()
