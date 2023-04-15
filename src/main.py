@@ -43,7 +43,7 @@ def init_certs(cert_password):
     return
 
 
-def send_stream(taky, streams):
+def send_stream(streams):
     logging.info(f"[+] Consumer Thread started, waiting on Active Streams...")
     while(True):
         if streams.empty():
@@ -90,12 +90,14 @@ def main():
     
     streams = Queue()
     init_certs(CERT_PASS)
-    taky = taky_connect(TAKY_IP, TAKY_MON_PORT)
+    #taky = taky_connect(TAKY_IP, TAKY_MON_PORT)
 
-    if (taky._closed == False): #Start the consumer of the queue
-       consumer = Thread(target=send_stream, args=(taky, streams))
-       consumer.start()
-
+    # if (taky._closed == False): #Start the consumer of the queue
+    #    consumer = Thread(target=send_stream, args=(taky, streams))
+    #    consumer.start()
+    
+    consumer = Thread(target=send_stream, args=(streams))
+    consumer.start()
     logging.info(f"Connected to Taky Monitor Port")
     producer = Thread(target=fetch_streams, args=(STREAM_URL, STREAM_API_PORT, streams))
     producer.start()
