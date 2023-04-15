@@ -21,7 +21,11 @@ TAKY_MON_PORT   = os.getenv("MON_PORT", default=1337)
 LOG_LEVEL       = os.getenv("LOG_LEVEL", default="INFO").upper()
 
 def taky_connect(HOST, PORT):
-    return True
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    logging.info('- Socket created')
+    s.connect((HOST, PORT))
+    logging.info('[+] Connected to TAKY Monitor Port')
+    return s
 
 def fetch_streams(HOST, PORT, active_streams):
     # active_streams
@@ -30,18 +34,21 @@ def fetch_streams(HOST, PORT, active_streams):
     URL = "http://{}:{}/v1/paths/list".format(HOST, PORT)
     while (True):
         resp = requests.get(url=URL)
-        data = json.loads(resp.text)
-        
-        for _, streams in data.items():
-            for callsign, properties in streams.items():
+        if resp.status_code == 200:
+            data = json.loads(resp.text)
             
-                logging.info("New Stream - Callsign: {}, Source-ID: {}".format(callsign, properties['source']['id']))
-                active_streams.put({
-                        'callsign': callsign,
-                        'stream-id': properties['source']['id']
-                        }
-                    )
-                active_streams.put({'callsign':'test-A10','session-id':'bf59b093-8ad6-498a-b73e-499eb3cf2704'})
+            for _, streams in data.items():
+                for callsign, properties in streams.items():
+                
+                    logging.info("New Stream - Callsign: {}, Source-ID: {}".format(callsign, properties['source']['id']))
+                    active_streams.put({
+                            'callsign': callsign,
+                            'stream-id': properties['source']['id']
+                            }
+                        )
+            active_streams.put({'callsign':'test-A10','session-id':'bf59b093-8ad6-498a-b73e-499eb3cf2704'})
+        else:
+            logging.error('Could not connect to Streaming API')
         sleep(5)        
 
 def main():
@@ -53,15 +60,12 @@ def main():
 
     taky = taky_connect(TAKY_MON_IP, TAKY_MON_PORT)
 
-    if (taky._connected == True): #Start the consumer of tghe queue
+    if (taky._closed == False): #Start the consumer of tghe queue
        pass
-
 
     logging.info(f"Connected to Taky Monitor Port")
     producer = Thread(target=fetch_streams, args=(STREAM_URL, STREAM_API_PORT, streams))
     producer.start()
-
-
 
     return
 
