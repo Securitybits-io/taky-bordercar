@@ -11,7 +11,7 @@ from time import sleep
 from queue import Queue
 
 
-STREAM_URL      = os.getenv("STREAM_URL", default="ace-training.airsoftsweden.com")
+STREAM_URL      = os.getenv("STREAM_URL", default="127.0.0.1")
 STREAM_API_PORT = os.getenv("STREAM_API_PORT", default=9997)
 
 TAKY_MON_IP     = os.getenv("TAKY_MON_IP", default="127.0.0.1")
@@ -41,8 +41,10 @@ def send_stream(taky, streams):
         else:
             stream = streams.get()
             message = cot.composeCoT(STREAM_URL, stream['callsign'])
-
-            taky.send(message)
+            try:
+                taky.send(message)
+            except:
+                logging.error(message)
             
             sleep(0.5)
 
